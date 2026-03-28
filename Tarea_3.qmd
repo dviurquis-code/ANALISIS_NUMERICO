@@ -1,0 +1,640 @@
+---
+title: "Tarea 3. Time Series"
+author: "VIURQUIS NAVA DULCE MARÍA"
+lang: es
+format:
+  html:
+    grid:
+      body-width: 1200px 
+---
+
+Instalar las bibliotecas: `openpyxl`, `datetime`, `plotly` y `statsmodels`; para manejar archivos Excel, trabajar con fechas, crear gráficos interactivos y realizar análisis de series temporales, respectivamente. Agregar también la extension `Data Wrangler` para facilitar la manipulación de datos en `pandas`.
+
+
+```{python}
+#| echo: false
+
+import numpy as np
+import matplotlib.pyplot as plt
+import yfinance as yf
+import pandas as pd
+
+import matplotlib.ticker as ticker
+import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go
+import calendar
+import statsmodels.api as sm
+import statsmodels.graphics.tsaplots as tsaplots
+import statsmodels.tsa.stattools as ts
+import statsmodels.tsa.seasonal as seasonal
+```
+
+
+## Indicadores Económicos del INEGI
+
+En este ejemplo, se muestra cómo cargar y graficar indicadores económicos del INEGI utilizando la biblioteca `pandas` para manejar los datos y `matplotlib` para visualizarlos.   
+
+El objetivo es visualizar la evolución de estos indicadores a lo largo del tiempo, lo que puede ser útil para analizar tendencias, identificar patrones y tomar decisiones informadas basadas en la información económica disponible.
+
+**Cargar datos**
+
+Cargamos el conjunto de datos y mostramos su estructura para entender qué tipo de información contiene y cómo está organizada. Esto nos permitirá seleccionar las columnas relevantes para nuestras gráficas de series temporales.
+
+```{python}
+#| code-fold: true
+
+data_inegi = pd.read_excel("TIE_Inegi_long.xlsx")
+data_inegi.info()
+```
+
+
+
+### Exportaciones Totales de México
+
+En esta sección, se grafica la serie temporal de las exportaciones totales de México para observar su evolución a lo largo del tiempo. Esto puede ayudar a identificar tendencias, patrones estacionales o cambios significativos en el volumen exportado, lo que es relevante para el análisis del comercio exterior y la economía nacional.
+
+
+```{python}
+#| code-fold: true
+df_exp = data_inegi[["Fecha", "Exportaciones_totales"]].dropna()
+df_exp.info()
+print(f"Fecha de inicio: {df_exp['Fecha'].min()}")
+print(f"Fecha de fin: {df_exp['Fecha'].max()}")
+print("------")
+
+print("Estadísticas descriptivas de Exportaciones Totales:")
+print(df_exp["Exportaciones_totales"].describe())
+```
+
+
+
+**Serie temporal de Exportaciones Totales**
+
+Una serie temporal es una secuencia de datos recopilados o registrados en intervalos de tiempo sucesivos. En este caso, se grafican los exportaciones totales de México a lo largo del tiempo para visualizar su evolución y detectar posibles tendencias o patrones en el mercado laboral.
+
+
+```{python}
+#| code-fold: true
+
+# Configurar la columna "Fecha" como índice para facilitar la manipulación de datos y la creación de gráficos de series temporales.
+df_exp.set_index("Fecha", inplace=True)
+# Definición de la serie temporal
+exp_ts = df_exp["Exportaciones_totales"]
+print(exp_ts.info())
+```
+
+
+**Gráfica de la serie temporal de Exportaciones Totales**
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+plt.figure(figsize=(12, 6))
+plt.plot(exp_ts.index, exp_ts.values, marker='o', ms=3)
+plt.title('Exportaciones Totales de México')
+plt.xlabel('Fecha')
+plt.ylabel('Millones de USD')
+plt.grid(alpha=0.3)
+plt.show()
+```
+
+Filtramos datos a partir de 2016 para observar mejor la tendencia en las exportaciones durante los últimos años.
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+exp_ts_2016 = exp_ts[exp_ts.index >= "2016-01-01"]
+plt.figure(figsize=(12, 6))
+plt.plot(exp_ts_2016.index, exp_ts_2016.values, marker='o', ms=5)
+plt.title('Exportaciones Totales de México (Desde 2016)')
+plt.xlabel('Fecha')
+plt.ylabel('Millones de USD')
+plt.grid(alpha=0.3)
+plt.show()
+```
+
+
+**Gráfica interactiva de la serie temporal de Exportaciones Totales**
+
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+
+fig = px.line(x = exp_ts_2016.index, y = exp_ts_2016.values, title='Exportaciones Totales de México', labels={'y': 'Millones de USD', 'x': 'Fecha'})
+fig.update_xaxes(rangeslider_visible=True)
+```
+
+
+**Comparación anual de Exportaciones Totales**
+
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+# Preparación de datos para la gráfica de comparación anual
+df_exp_anual = exp_ts_2016.reset_index()
+df_exp_anual['Año'] = df_exp_anual['Fecha'].dt.year
+df_exp_anual['Mes'] = df_exp_anual['Fecha'].dt.month
+df_exp_anual["Nombre_mes"] = df_exp_anual['Fecha'].dt.strftime('%b')
+
+
+plt.figure(figsize=(12, 6))
+sns.lineplot(data=df_exp_anual, x='Nombre_mes', y='Exportaciones_totales', hue='Año', marker='o', palette='tab10')
+plt.title('Comparación Anual de Exportaciones Totales')
+plt.xlabel('Mes')
+plt.ylabel('Millones de USD')
+plt.legend(title='Año', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.grid(alpha=0.3)
+plt.show()
+```
+
+**Comparación mensual de Exportaciones Totales**
+
+
+
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+plt.figure(figsize=(12, 6))
+sns.lineplot(data=df_exp_anual, x='Año', y='Exportaciones_totales', hue='Nombre_mes', marker='o', palette='tab10')
+plt.title('Comparación Mensual de Exportaciones Totales')
+plt.xlabel('Año')
+plt.ylabel('Millones de USD')
+plt.legend(title='Mes', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.grid(alpha=0.3)
+plt.show()
+```
+
+
+
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = px.line(df_exp_anual, x='Año', y='Exportaciones_totales', markers=True, color='Nombre_mes', title='Comparación Mensual de Exportaciones Totales', labels={'Exportaciones_totales': 'Millones de USD'})
+fig.update_layout(legend_title_text='Mes', plot_bgcolor='rgba(194, 190, 190, 0)', xaxis=dict(tickmode='linear'))
+fig.update
+fig.update_xaxes(dtick=1, gridcolor='rgba(138, 132, 132, 0.77)')
+fig.update_yaxes(gridcolor='rgba(138, 132, 132, 0.77)')
+
+```
+
+
+**Boxplot trimestral de Exportaciones Totales**
+
+Con esta gráfica, se busca visualizar la distribución de los exportaciones totales de México por trimestre a lo largo de los años. Esto permite identificar patrones estacionales, variabilidad y posibles outliers en cada trimestre, lo que es útil para el análisis de tendencias y la toma de decisiones informadas.
+
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+df_exp_anual['Trimestre'] = df_exp_anual['Fecha'].dt.to_period('Q')
+
+# Variable combinada de año y trimestre para el eje x
+df_exp_anual['Año_Trimestre'] = df_exp_anual['Año'].astype(str) + '-Q' + df_exp_anual['Trimestre'].dt.quarter.astype(str)
+
+plt.figure(figsize=(12, 6))
+sns.boxplot(data=df_exp_anual, x='Año_Trimestre', y='Exportaciones_totales', hue='Año', palette= 'Paired')
+plt.title('Boxplot Trimestral de Exportaciones Totales')
+plt.xlabel('Año-Trimestre')
+plt.ylabel('Millones de USD')
+plt.xticks(rotation=45)
+plt.grid(alpha=0.3)
+plt.legend(title='Año', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.show()
+
+
+```
+
+
+**Heatmap Exportaciones Totales**
+
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+# Preparación de datos para el heatmap
+heatmap_data_exp = df_exp_anual.pivot_table(index='Mes', columns='Año', values='Exportaciones_totales')
+
+plt.figure(figsize=(12, 6))
+sns.heatmap(heatmap_data_exp, annot=True, linewidths=0.5, fmt=".1e", cmap='Spectral')
+plt.title('Heatmap de Exportaciones Totales por Mes y Año')
+plt.xlabel('Año')
+plt.ylabel('Mes')
+plt.yticks(ticks = np.linspace(0.5, 11.5, 12), labels=[calendar.month_abbr[i] for i in range(1, 13)], rotation=0)
+plt.show()
+```
+
+
+**Superficie de Exportaciones Totales**
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+Z = heatmap_data_exp.values
+X = heatmap_data_exp.columns.astype(str) #Años
+Y = calendar.month_abbr[1:13] #Meses
+
+fig = go.Figure(data=[go.Surface(z=Z, x=X, y=Y, 
+                contours=dict(
+        x=dict(
+            show=True,          # Líneas por año sobre la superficie
+            color="white",
+            width=2
+        ),
+        y=dict(
+            show=True,          # Líneas por mes sobre la superficie
+            color="white",
+            width=2
+        )
+    ),
+                colorscale='Spectral')])
+fig.update_layout(title='Superficie Exportaciones Totales',
+                  scene=dict(xaxis_title='Año', yaxis_title='Mes', zaxis_title='Millones de USD'),
+                  autosize=True,
+                  height=600)
+```
+
+
+**Descomposición de la serie temporal de Exportaciones Totales**
+
+Una serie temporal $Y_t$ se puede descomponer en tres componentes principales: tendencia ($T_t$), estacionalidad ($S_t$) y ruido o componente aleatorio ($R_t$). La fórmula general para la descomposición aditiva es:
+
+\begin{equation}
+Y_t = T_t + S_t + R_t
+\end{equation}
+
+También existe la descomposición multiplicativa, que se expresa como:
+
+\begin{equation}
+Y_t = T_t \times S_t \times R_t
+\end{equation}
+
+
+**Descomposición aditiva de la serie temporal de Exportaciones Totales**
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+#| fig-cap: "Descomposición aditiva de la serie temporal de Exportaciones Totales"
+
+decomposition_add_exp = seasonal.seasonal_decompose(exp_ts_2016, model='additive', period=12)
+
+plt.figure(figsize=(12, 8))
+plt.subplot(4,1,1)
+plt.plot(exp_ts_2016,color='blue')
+plt.title('Serie Temporal Original')
+
+plt.subplot(4,1,2)
+plt.plot(decomposition_add_exp.trend,color='orange')
+plt.title('Tendencia')
+
+plt.subplot(4,1,3)
+plt.plot(decomposition_add_exp.seasonal,color='green')
+plt.title('Estacionalidad')
+
+plt.subplot(4,1,4)
+plt.plot(decomposition_add_exp.resid,color='red')
+plt.title('Ruido')
+plt.tight_layout()
+plt.show()
+
+```
+
+
+**Descomposición multiplicativa de la serie temporal de Exportaciones Totales**
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+#| fig-cap: "Descomposición multiplicativa de la serie temporal de Exportaciones Totales"
+
+decomposition_mul_exp = seasonal.seasonal_decompose(exp_ts_2016, model='multiplicative', period=12)
+plt.figure(figsize=(12, 8))
+plt.subplot(4,1,1)
+plt.plot(exp_ts_2016,color='blue')
+plt.title('Serie Temporal Original')
+
+plt.subplot(4,1,2)
+plt.plot(decomposition_mul_exp.trend,color='orange')
+plt.title('Tendencia')
+
+plt.subplot(4,1,3)
+plt.plot(decomposition_mul_exp.seasonal,color='green')
+plt.title('Estacionalidad')
+
+plt.subplot(4,1,4)
+plt.plot(decomposition_mul_exp.resid,color='red')
+plt.title('Ruido')
+plt.tight_layout()
+plt.show()
+```
+
+## Valores financieros
+
+Ahora vamos a graficar las series temporales de los precios de las acciones de Hyatt (H), Marriott (MAR), Hilton (HLT), InterContinental (IHG) y Airbnb (ABNB) utilizando la biblioteca `yfinance` para obtener los datos históricos de las acciones y `matplotlib` para visualizarlos. Esto nos permitirá analizar la evolución de los precios de estas acciones del sector hotelero y turístico a lo largo del tiempo y comparar su desempeño. El periodo de análisis se establece desde el 1 de enero de 2020 hasta el 31 de diciembre de 2025, lo que nos brinda una visión completa de su comportamiento durante estos años, incluyendo el impacto de la pandemia de COVID-19.
+
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+tickers = ["H", "MAR", "HLT", "IHG", "ABNB"]
+start_date = "2020-01-01"
+end_date = "2025-12-31"
+
+df_yf = yf.download(tickers, start=start_date, end=end_date, interval="1d")["Close"]
+```
+
+**Gráfica de los precios de las acciones**
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+for ticker in tickers:
+    fig.add_trace(go.Scatter(x=df_yf.index, y=df_yf[ticker], name=ticker))
+fig.update_layout(title='Precios de las acciones hoteleras (2020-2025)', xaxis_title='Fecha', yaxis_title='Precio (USD)', legend_title_text='Acciones Hoteleras', hovermode='x unified')
+fig.update_xaxes(rangeslider_visible=True, gridcolor='rgba(138, 132, 132, 0.77)')
+fig.update_yaxes(gridcolor='rgba(138, 132, 132, 0.77)')
+fig.show()  
+```
+
+
+```{python}
+#| code-fold: true
+
+print(type(df_yf))
+print(df_yf.columns.tolist())
+print(df_yf.head(2))
+```
+
+
+Ahora seleccionamos la acción de Hyatt (H) para realizar un análisis más detallado de su serie temporal, incluyendo la descomposición de la serie temporal para identificar sus componentes de tendencia, estacionalidad y ruido.
+
+**Candlestick de H (Hyatt)**
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+df_hyatt_ohlc = yf.download("H", start='2025-11-01', end='2025-12-31', interval="1d")
+hyatt = df_hyatt_ohlc.xs("H", level=1, axis=1)
+
+fig = go.Figure(data=[go.Candlestick(x=hyatt.index,
+                open=hyatt['Open'],
+                high=hyatt['High'],
+                low=hyatt['Low'],
+                close=hyatt['Close'])])
+fig.update_layout(title='Gráfico de Velas de H - Hyatt (2025)', xaxis_title='Fecha', yaxis_title='Precio (USD)')
+fig.update_xaxes(rangeslider_visible=True, gridcolor='rgba(138, 132, 132, 0.77)')
+fig.update_yaxes(gridcolor='rgba(138, 132, 132, 0.77)')
+fig.show()
+```
+
+
+
+**Resumen estadístico de los precios de H - Hyatt**
+
+```{python}
+#| code-fold: true
+
+hyatt_ts = df_yf["H"].dropna()
+print(hyatt_ts.info())
+print(f"Fecha de inicio: {hyatt_ts.index.min()}")
+print(f"Fecha de fin: {hyatt_ts.index.max()}")
+print("------")
+print("Estadísticas descriptivas de H - Hyatt:")
+print(hyatt_ts.describe())
+
+```
+
+**Comparación anual de H - Hyatt**
+
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+hyatt_df = hyatt_ts.reset_index()
+hyatt_df['Año'] = hyatt_df['Date'].dt.year
+hyatt_df['Mes'] = hyatt_df['Date'].dt.month
+hyatt_df["Nombre_mes"] = hyatt_df['Date'].dt.strftime('%b')
+hyatt_df['Dia_año']   = hyatt_df['Date'].dt.dayofyear 
+
+plt.figure(figsize=(12, 6))
+sns.lineplot(data=hyatt_df, x='Nombre_mes', y='H', hue='Año', marker='o', palette='tab10')
+plt.title('Comparación Anual de H - Hyatt (Mensual)')
+plt.xlabel('Mes')
+plt.ylabel('Precio (USD)')
+plt.legend(title='Año', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.grid(alpha=0.3)
+plt.show()
+```
+
+
+
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+#| code-fold: true
+#| fig-align: "center"
+
+plt.figure(figsize=(12, 6))
+sns.lineplot(
+    data=hyatt_df,
+    x='Dia_año',
+    y='H',
+    hue='Año',
+    palette='tab10',
+    errorbar=None
+)
+
+# Reemplazar números de día por nombres de mes en el eje X
+
+meses_dias = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
+meses_nombres = ['Ene','Feb','Mar','Abr','May','Jun',
+                 'Jul','Ago','Sep','Oct','Nov','Dic']
+plt.xticks(ticks=meses_dias, labels=meses_nombres)
+
+plt.title('Comparación Anual de H - Hyatt (Diaria)')
+plt.xlabel('Mes')
+plt.ylabel('Precio (USD)')
+plt.legend(title='Año', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()
+```
+
+
+**Boxplot trimestral de H - Hyatt**
+
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+
+hyatt_df['Trimestre'] = hyatt_df['Date'].dt.to_period('Q')
+hyatt_df['Año_Trimestre'] = hyatt_df['Año'].astype(str) + '-Q' + hyatt_df['Trimestre'].dt.quarter.astype(str)
+
+plt.figure(figsize=(12, 6))
+sns.boxplot(data=hyatt_df, x='Año_Trimestre', y='H', hue='Año', palette= 'Paired')
+plt.title('Boxplot Trimestral de H - Hyatt')
+plt.xlabel('Año-Trimestre')
+plt.ylabel('Precio (USD)')
+plt.xticks(rotation=45)
+plt.grid(alpha=0.3)
+plt.legend(title='Año', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.show()
+```
+
+**Heatmap de H - Hyatt**
+
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+
+#| code-fold: true
+#| fig-align: "center"
+
+# Crear columna de día del año para ordenar correctamente
+hyatt_df['Mes-dia']  = hyatt_df['Date'].dt.strftime('%b-%d')
+
+
+heatmap_data_hyatt = hyatt_df.pivot_table(
+    index='Mes-dia',
+    columns='Año',
+    values='H'
+)
+
+# Ordenar por día del año (no alfabéticamente)
+orden = (hyatt_df.drop_duplicates('Mes-dia')
+                 .sort_values('Dia_año')['Mes-dia']
+                 .tolist())
+heatmap_data_hyatt = heatmap_data_hyatt.reindex(orden)
+
+# Rellenar NaN para eliminar líneas blancas
+heatmap_data_hyatt = heatmap_data_hyatt.ffill().bfill()
+
+plt.figure(figsize=(12, 8))
+sns.heatmap(
+    heatmap_data_hyatt,
+    annot=False,
+    cmap='Spectral',
+    linewidths=0,        
+    linecolor='none'     
+)
+plt.title('Heatmap de H - Hyatt por Fecha y Año')
+plt.xlabel('Año')
+plt.ylabel('Fecha')
+
+plt.tight_layout()
+plt.show()
+```
+
+
+**Superficie de H - Hyatt**
+
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+Z = heatmap_data_hyatt.values
+X = heatmap_data_hyatt.columns.astype(str) #Años
+Y = heatmap_data_hyatt.index #Fechas
+
+fig = go.Figure(data=[go.Surface(z=Z, x=X, y=Y, 
+                contours=dict(
+        x=dict(
+            show=True,          # Líneas por año sobre la superficie
+            color="white",
+            width=2
+        ),
+        y=dict(
+            show=True,          # Líneas por fecha sobre la superficie
+            color="white",
+            width=2
+        )
+    ),
+                colorscale='Spectral')])
+fig.update_layout(title='Superficie de H - Hyatt', scene=dict(xaxis_title='Año', yaxis_title='Fecha', zaxis_title='Precio (USD)'), autosize=True, height=600)
+```
+
+**Descomposición aditiva de H - Hyatt**
+
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+#| fig-cap: "Descomposición aditiva de la serie temporal de H - Hyatt"
+
+
+# Utilizar periodo de 252 para capturar la estacionalidad anual en datos diarios (252 días hábiles por año que es el estándar en finanzas)
+decomposition_add_hyatt = seasonal.seasonal_decompose(hyatt_ts, model='additive', period=252)
+plt.figure(figsize=(12, 8))
+plt.subplot(4,1,1)
+plt.plot(hyatt_ts,color='blue')
+plt.title('Serie Temporal Original')    
+
+plt.subplot(4,1,2)
+plt.plot(decomposition_add_hyatt.trend,color='orange')
+plt.title('Tendencia')
+
+plt.subplot(4,1,3)
+plt.plot(decomposition_add_hyatt.seasonal,color='green')
+plt.title('Estacionalidad')
+
+plt.subplot(4,1,4)
+plt.plot(decomposition_add_hyatt.resid,color='red')
+plt.title('Ruido')
+plt.tight_layout()
+plt.show()
+```
+
+**Descomposición multiplicativa de H - Hyatt**
+
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+#| fig-cap: "Descomposición multiplicativa de la serie temporal de H - Hyatt"
+
+decomposition_mul_hyatt = seasonal.seasonal_decompose(hyatt_ts, model='multiplicative', period=252)
+plt.figure(figsize=(12, 8))
+plt.subplot(4,1,1)
+plt.plot(hyatt_ts,color='blue')
+plt.title('Serie Temporal Original')
+
+plt.subplot(4,1,2)
+plt.plot(decomposition_mul_hyatt.trend,color='orange')
+plt.title('Tendencia')
+
+plt.subplot(4,1,3)
+plt.plot(decomposition_mul_hyatt.seasonal,color='green')
+plt.title('Estacionalidad')
+
+plt.subplot(4,1,4)
+plt.plot(decomposition_mul_hyatt.resid,color='red')
+plt.title('Ruido')
+plt.tight_layout()
+plt.show()
+```
+
