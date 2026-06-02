@@ -1,0 +1,1684 @@
+---
+title: "Tarea 5. Diferenciación e integración numérica."
+author: "VIURQUIS NAVA DULCE MARÍA"
+format: 
+  html:
+    grid: 
+      body-width: 1000px
+editor: visual
+jupyter: python3
+---
+
+Importamos packages y funciones necesarias:
+
+```{python}
+#| code-fold: true
+
+import matplotlib.pyplot as plt
+import numpy as np
+import math
+
+import plotly.graph_objects as go
+from scipy.differentiate import derivative
+import numdifftools as nd
+from scipy import integrate
+import pandas as pd
+from scipy import stats
+```
+
+# Ejercicio 1.
+
+Para cada una de las siguientes funciones:
+
+-   Realiza la respectiva gráfica en el intervalo dado.
+
+-   Compara las gráficas de las derivadas aproximadas de la función `derivative` de `Scipy`, con dos tamaños de paso utilizando la función `nd.Derivative` (con `order =2` y `order = 4`, con las opciones de `method`: `forward`, `backward`, `central`) y la derivada *exacta* en tal intervalo.
+
+-   Compara las gráficas de las segundas derivadas aproximadas con dos tamaños de paso utilizando la función `nd.Derivative` y la segunda derivada *exacta* en tal intervalo.
+
+-   Realiza las gráficas de los errores absolutos en cada caso.
+
+a)  $f(x)=e^{2x}-\cos 2x$, $x\in [0,2]$
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+f_a = lambda x: np.exp(2*x) - np.cos(2*x)
+df_a_exacta = lambda x: 2*np.exp(2*x) + 2*np.sin(2*x)
+d2f_a_exacta = lambda x: 4*np.exp(2*x) + 4*np.cos(2*x)
+
+x_values_a = np.linspace(0, 2, 200)
+
+plt.figure(figsize=(8, 5))
+plt.plot(x_values_a, f_a(x_values_a), label=r'$f(x) = e^{2x} - \cos(2x)$', linewidth=2)
+plt.xlabel("x")
+plt.ylabel("f(x)")
+plt.title(r"Función $f(x) = e^{2x} - \cos(2x)$")
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
+```
+
+**Primera derivada — comparación de métodos:**
+
+::: panel-tabset
+## h = 0.1
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+h = 0.1
+
+df_scipy_a = derivative(f_a, x_values_a).df
+
+fwd2 = nd.Derivative(f_a, step=h, method='forward', order=2, n=1)
+bwd2 = nd.Derivative(f_a, step=h, method='backward', order=2, n=1)
+cen2 = nd.Derivative(f_a, step=h, method='central', order=2, n=1)
+fwd4 = nd.Derivative(f_a, step=h, method='forward', order=4, n=1)
+bwd4 = nd.Derivative(f_a, step=h, method='backward', order=4, n=1)
+cen4 = nd.Derivative(f_a, step=h, method='central', order=4, n=1)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_a, y=df_a_exacta(x_values_a), mode='lines', name="Exacta", line=dict(width=3)))
+fig.add_trace(go.Scatter(x=x_values_a, y=df_scipy_a, mode='lines', name="scipy.derivative"))
+fig.add_trace(go.Scatter(x=x_values_a, y=fwd2(x_values_a), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=bwd2(x_values_a), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=cen2(x_values_a), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=fwd4(x_values_a), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_a, y=bwd4(x_values_a), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_a, y=cen4(x_values_a), mode='lines', name="Central order=4"))
+fig.update_layout(title="Primera derivada — h=0.1", xaxis_title="x", yaxis_title="f'(x)",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(df_scipy_a - df_a_exacta(x_values_a)), mode='lines', name="scipy.derivative"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(fwd2(x_values_a) - df_a_exacta(x_values_a)), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(bwd2(x_values_a) - df_a_exacta(x_values_a)), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(cen2(x_values_a) - df_a_exacta(x_values_a)), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(fwd4(x_values_a) - df_a_exacta(x_values_a)), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(bwd4(x_values_a) - df_a_exacta(x_values_a)), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(cen4(x_values_a) - df_a_exacta(x_values_a)), mode='lines', name="Central order=4"))
+fig.update_layout(title="Error absoluto primera derivada — h=0.1", xaxis_title="x", yaxis_title="Error absoluto",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+## h = 0.25
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+h = 0.25
+
+df_scipy_a = derivative(f_a, x_values_a).df
+
+fwd2 = nd.Derivative(f_a, step=h, method='forward', order=2, n=1)
+bwd2 = nd.Derivative(f_a, step=h, method='backward', order=2, n=1)
+cen2 = nd.Derivative(f_a, step=h, method='central', order=2, n=1)
+fwd4 = nd.Derivative(f_a, step=h, method='forward', order=4, n=1)
+bwd4 = nd.Derivative(f_a, step=h, method='backward', order=4, n=1)
+cen4 = nd.Derivative(f_a, step=h, method='central', order=4, n=1)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_a, y=df_a_exacta(x_values_a), mode='lines', name="Exacta", line=dict(width=3)))
+fig.add_trace(go.Scatter(x=x_values_a, y=df_scipy_a, mode='lines', name="scipy.derivative"))
+fig.add_trace(go.Scatter(x=x_values_a, y=fwd2(x_values_a), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=bwd2(x_values_a), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=cen2(x_values_a), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=fwd4(x_values_a), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_a, y=bwd4(x_values_a), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_a, y=cen4(x_values_a), mode='lines', name="Central order=4"))
+fig.update_layout(title="Primera derivada — h=0.25", xaxis_title="x", yaxis_title="f'(x)",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(df_scipy_a - df_a_exacta(x_values_a)), mode='lines', name="scipy.derivative"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(fwd2(x_values_a) - df_a_exacta(x_values_a)), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(bwd2(x_values_a) - df_a_exacta(x_values_a)), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(cen2(x_values_a) - df_a_exacta(x_values_a)), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(fwd4(x_values_a) - df_a_exacta(x_values_a)), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(bwd4(x_values_a) - df_a_exacta(x_values_a)), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(cen4(x_values_a) - df_a_exacta(x_values_a)), mode='lines', name="Central order=4"))
+fig.update_layout(title="Error absoluto primera derivada — h=0.25", xaxis_title="x", yaxis_title="Error absoluto",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+:::
+
+**Segunda derivada:**
+
+::: panel-tabset
+## h = 0.1
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+h = 0.1
+d2fwd2 = nd.Derivative(f_a, step=h, method='forward', order=2, n=2)
+d2bwd2 = nd.Derivative(f_a, step=h, method='backward', order=2, n=2)
+d2cen2 = nd.Derivative(f_a, step=h, method='central', order=2, n=2)
+d2fwd4 = nd.Derivative(f_a, step=h, method='forward', order=4, n=2)
+d2bwd4 = nd.Derivative(f_a, step=h, method='backward', order=4, n=2)
+d2cen4 = nd.Derivative(f_a, step=h, method='central', order=4, n=2)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_a, y=d2f_a_exacta(x_values_a), mode='lines', name="Exacta", line=dict(width=3)))
+fig.add_trace(go.Scatter(x=x_values_a, y=d2fwd2(x_values_a), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=d2bwd2(x_values_a), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=d2cen2(x_values_a), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=d2fwd4(x_values_a), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_a, y=d2bwd4(x_values_a), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_a, y=d2cen4(x_values_a), mode='lines', name="Central order=4"))
+fig.update_layout(title="Segunda derivada — h=0.1", xaxis_title="x", yaxis_title="f''(x)",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(d2fwd2(x_values_a) - d2f_a_exacta(x_values_a)), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(d2bwd2(x_values_a) - d2f_a_exacta(x_values_a)), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(d2cen2(x_values_a) - d2f_a_exacta(x_values_a)), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(d2fwd4(x_values_a) - d2f_a_exacta(x_values_a)), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(d2bwd4(x_values_a) - d2f_a_exacta(x_values_a)), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(d2cen4(x_values_a) - d2f_a_exacta(x_values_a)), mode='lines', name="Central order=4"))
+fig.update_layout(title="Error absoluto segunda derivada — h=0.1", xaxis_title="x", yaxis_title="Error absoluto",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+## h = 0.25
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+h = 0.25
+d2fwd2 = nd.Derivative(f_a, step=h, method='forward', order=2, n=2)
+d2bwd2 = nd.Derivative(f_a, step=h, method='backward', order=2, n=2)
+d2cen2 = nd.Derivative(f_a, step=h, method='central', order=2, n=2)
+d2fwd4 = nd.Derivative(f_a, step=h, method='forward', order=4, n=2)
+d2bwd4 = nd.Derivative(f_a, step=h, method='backward', order=4, n=2)
+d2cen4 = nd.Derivative(f_a, step=h, method='central', order=4, n=2)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_a, y=d2f_a_exacta(x_values_a), mode='lines', name="Exacta", line=dict(width=3)))
+fig.add_trace(go.Scatter(x=x_values_a, y=d2fwd2(x_values_a), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=d2bwd2(x_values_a), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=d2cen2(x_values_a), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=d2fwd4(x_values_a), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_a, y=d2bwd4(x_values_a), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_a, y=d2cen4(x_values_a), mode='lines', name="Central order=4"))
+fig.update_layout(title="Segunda derivada — h=0.25", xaxis_title="x", yaxis_title="f''(x)",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(d2fwd2(x_values_a) - d2f_a_exacta(x_values_a)), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(d2bwd2(x_values_a) - d2f_a_exacta(x_values_a)), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(d2cen2(x_values_a) - d2f_a_exacta(x_values_a)), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(d2fwd4(x_values_a) - d2f_a_exacta(x_values_a)), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(d2bwd4(x_values_a) - d2f_a_exacta(x_values_a)), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_a, y=np.abs(d2cen4(x_values_a) - d2f_a_exacta(x_values_a)), mode='lines', name="Central order=4"))
+fig.update_layout(title="Error absoluto segunda derivada — h=0.25", xaxis_title="x", yaxis_title="Error absoluto",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+:::
+
+b)  $f(x)=\log(x+2)-(x+1)^2$, $x\in [0,5]$
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+f_b = lambda x: np.log(x + 2) - (x + 1)**2
+df_b_exacta = lambda x: 1/(x + 2) - 2*(x + 1)
+d2f_b_exacta = lambda x: -1/(x + 2)**2 - 2
+
+x_values_b = np.linspace(0, 5, 200)
+
+plt.figure(figsize=(8, 5))
+plt.plot(x_values_b, f_b(x_values_b), label=r'$f(x) = \log(x+2) - (x+1)^2$', linewidth=2)
+plt.xlabel("x")
+plt.ylabel("f(x)")
+plt.title(r"Función $f(x) = \log(x+2) - (x+1)^2$")
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
+```
+
+**Primera derivada:**
+
+::: panel-tabset
+## h = 0.1
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+h = 0.1
+df_scipy_b = derivative(f_b, x_values_b).df
+fwd2 = nd.Derivative(f_b, step=h, method='forward', order=2, n=1)
+bwd2 = nd.Derivative(f_b, step=h, method='backward', order=2, n=1)
+cen2 = nd.Derivative(f_b, step=h, method='central', order=2, n=1)
+fwd4 = nd.Derivative(f_b, step=h, method='forward', order=4, n=1)
+bwd4 = nd.Derivative(f_b, step=h, method='backward', order=4, n=1)
+cen4 = nd.Derivative(f_b, step=h, method='central', order=4, n=1)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_b, y=df_b_exacta(x_values_b), mode='lines', name="Exacta", line=dict(width=3)))
+fig.add_trace(go.Scatter(x=x_values_b, y=df_scipy_b, mode='lines', name="scipy.derivative"))
+fig.add_trace(go.Scatter(x=x_values_b, y=fwd2(x_values_b), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=bwd2(x_values_b), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=cen2(x_values_b), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=fwd4(x_values_b), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_b, y=bwd4(x_values_b), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_b, y=cen4(x_values_b), mode='lines', name="Central order=4"))
+fig.update_layout(title="Primera derivada — h=0.1", xaxis_title="x", yaxis_title="f'(x)",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(df_scipy_b - df_b_exacta(x_values_b)), mode='lines', name="scipy.derivative"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(fwd2(x_values_b) - df_b_exacta(x_values_b)), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(bwd2(x_values_b) - df_b_exacta(x_values_b)), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(cen2(x_values_b) - df_b_exacta(x_values_b)), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(fwd4(x_values_b) - df_b_exacta(x_values_b)), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(bwd4(x_values_b) - df_b_exacta(x_values_b)), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(cen4(x_values_b) - df_b_exacta(x_values_b)), mode='lines', name="Central order=4"))
+fig.update_layout(title="Error absoluto primera derivada — h=0.1", xaxis_title="x", yaxis_title="Error absoluto",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+## h = 0.25
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+h = 0.25
+df_scipy_b = derivative(f_b, x_values_b).df
+fwd2 = nd.Derivative(f_b, step=h, method='forward', order=2, n=1)
+bwd2 = nd.Derivative(f_b, step=h, method='backward', order=2, n=1)
+cen2 = nd.Derivative(f_b, step=h, method='central', order=2, n=1)
+fwd4 = nd.Derivative(f_b, step=h, method='forward', order=4, n=1)
+bwd4 = nd.Derivative(f_b, step=h, method='backward', order=4, n=1)
+cen4 = nd.Derivative(f_b, step=h, method='central', order=4, n=1)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_b, y=df_b_exacta(x_values_b), mode='lines', name="Exacta", line=dict(width=3)))
+fig.add_trace(go.Scatter(x=x_values_b, y=df_scipy_b, mode='lines', name="scipy.derivative"))
+fig.add_trace(go.Scatter(x=x_values_b, y=fwd2(x_values_b), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=bwd2(x_values_b), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=cen2(x_values_b), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=fwd4(x_values_b), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_b, y=bwd4(x_values_b), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_b, y=cen4(x_values_b), mode='lines', name="Central order=4"))
+fig.update_layout(title="Primera derivada — h=0.25", xaxis_title="x", yaxis_title="f'(x)",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(df_scipy_b - df_b_exacta(x_values_b)), mode='lines', name="scipy.derivative"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(fwd2(x_values_b) - df_b_exacta(x_values_b)), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(bwd2(x_values_b) - df_b_exacta(x_values_b)), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(cen2(x_values_b) - df_b_exacta(x_values_b)), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(fwd4(x_values_b) - df_b_exacta(x_values_b)), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(bwd4(x_values_b) - df_b_exacta(x_values_b)), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(cen4(x_values_b) - df_b_exacta(x_values_b)), mode='lines', name="Central order=4"))
+fig.update_layout(title="Error absoluto primera derivada — h=0.25", xaxis_title="x", yaxis_title="Error absoluto",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+:::
+
+**Segunda derivada:**
+
+::: panel-tabset
+## h = 0.1
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+h = 0.1
+d2fwd2 = nd.Derivative(f_b, step=h, method='forward', order=2, n=2)
+d2bwd2 = nd.Derivative(f_b, step=h, method='backward', order=2, n=2)
+d2cen2 = nd.Derivative(f_b, step=h, method='central', order=2, n=2)
+d2fwd4 = nd.Derivative(f_b, step=h, method='forward', order=4, n=2)
+d2bwd4 = nd.Derivative(f_b, step=h, method='backward', order=4, n=2)
+d2cen4 = nd.Derivative(f_b, step=h, method='central', order=4, n=2)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_b, y=d2f_b_exacta(x_values_b), mode='lines', name="Exacta", line=dict(width=3)))
+fig.add_trace(go.Scatter(x=x_values_b, y=d2fwd2(x_values_b), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=d2bwd2(x_values_b), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=d2cen2(x_values_b), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=d2fwd4(x_values_b), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_b, y=d2bwd4(x_values_b), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_b, y=d2cen4(x_values_b), mode='lines', name="Central order=4"))
+fig.update_layout(title="Segunda derivada — h=0.1", xaxis_title="x", yaxis_title="f''(x)",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(d2fwd2(x_values_b) - d2f_b_exacta(x_values_b)), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(d2bwd2(x_values_b) - d2f_b_exacta(x_values_b)), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(d2cen2(x_values_b) - d2f_b_exacta(x_values_b)), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(d2fwd4(x_values_b) - d2f_b_exacta(x_values_b)), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(d2bwd4(x_values_b) - d2f_b_exacta(x_values_b)), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(d2cen4(x_values_b) - d2f_b_exacta(x_values_b)), mode='lines', name="Central order=4"))
+fig.update_layout(title="Error absoluto segunda derivada — h=0.1", xaxis_title="x", yaxis_title="Error absoluto",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+## h = 0.25
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+h = 0.25
+d2fwd2 = nd.Derivative(f_b, step=h, method='forward', order=2, n=2)
+d2bwd2 = nd.Derivative(f_b, step=h, method='backward', order=2, n=2)
+d2cen2 = nd.Derivative(f_b, step=h, method='central', order=2, n=2)
+d2fwd4 = nd.Derivative(f_b, step=h, method='forward', order=4, n=2)
+d2bwd4 = nd.Derivative(f_b, step=h, method='backward', order=4, n=2)
+d2cen4 = nd.Derivative(f_b, step=h, method='central', order=4, n=2)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_b, y=d2f_b_exacta(x_values_b), mode='lines', name="Exacta", line=dict(width=3)))
+fig.add_trace(go.Scatter(x=x_values_b, y=d2fwd2(x_values_b), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=d2bwd2(x_values_b), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=d2cen2(x_values_b), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=d2fwd4(x_values_b), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_b, y=d2bwd4(x_values_b), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_b, y=d2cen4(x_values_b), mode='lines', name="Central order=4"))
+fig.update_layout(title="Segunda derivada — h=0.25", xaxis_title="x", yaxis_title="f''(x)",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(d2fwd2(x_values_b) - d2f_b_exacta(x_values_b)), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(d2bwd2(x_values_b) - d2f_b_exacta(x_values_b)), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(d2cen2(x_values_b) - d2f_b_exacta(x_values_b)), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(d2fwd4(x_values_b) - d2f_b_exacta(x_values_b)), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(d2bwd4(x_values_b) - d2f_b_exacta(x_values_b)), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_b, y=np.abs(d2cen4(x_values_b) - d2f_b_exacta(x_values_b)), mode='lines', name="Central order=4"))
+fig.update_layout(title="Error absoluto segunda derivada — h=0.25", xaxis_title="x", yaxis_title="Error absoluto",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+:::
+
+c)  $f(x)=\sqrt{x}\,\text{sen}(x^2)$, $x\in [0,\pi]$
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+f_c = lambda x: np.sqrt(x) * np.sin(x**2)
+df_c_exacta = lambda x: (1/(2*np.sqrt(x))) * np.sin(x**2) + np.sqrt(x) * 2*x * np.cos(x**2)
+d2f_c_exacta = lambda x: (
+    (-1/(4*x**(3/2))) * np.sin(x**2)
+    + (1/(2*np.sqrt(x))) * 2*x * np.cos(x**2)
+    + (1/np.sqrt(x)) * np.cos(x**2)
+    - 4*x*np.sqrt(x) * np.sin(x**2)
+    + 2*np.sqrt(x) * np.cos(x**2)
+    + (1/(2*np.sqrt(x))) * 2*x * np.cos(x**2)
+)
+
+x_values_c = np.linspace(0.01, np.pi, 200)  # evitamos x=0 por la raíz
+
+plt.figure(figsize=(8, 5))
+plt.plot(x_values_c, f_c(x_values_c), label=r'$f(x) = \sqrt{x}\,\sin(x^2)$', linewidth=2)
+plt.xlabel("x")
+plt.ylabel("f(x)")
+plt.title(r"Función $f(x) = \sqrt{x}\,\sin(x^2)$")
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
+```
+
+**Primera derivada:**
+
+::: panel-tabset
+## h = 0.1
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+h = 0.1
+df_scipy_c = derivative(f_c, x_values_c).df
+fwd2 = nd.Derivative(f_c, step=h, method='forward', order=2, n=1)
+bwd2 = nd.Derivative(f_c, step=h, method='backward', order=2, n=1)
+cen2 = nd.Derivative(f_c, step=h, method='central', order=2, n=1)
+fwd4 = nd.Derivative(f_c, step=h, method='forward', order=4, n=1)
+bwd4 = nd.Derivative(f_c, step=h, method='backward', order=4, n=1)
+cen4 = nd.Derivative(f_c, step=h, method='central', order=4, n=1)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_c, y=df_c_exacta(x_values_c), mode='lines', name="Exacta", line=dict(width=3)))
+fig.add_trace(go.Scatter(x=x_values_c, y=df_scipy_c, mode='lines', name="scipy.derivative"))
+fig.add_trace(go.Scatter(x=x_values_c, y=fwd2(x_values_c), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=bwd2(x_values_c), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=cen2(x_values_c), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=fwd4(x_values_c), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_c, y=bwd4(x_values_c), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_c, y=cen4(x_values_c), mode='lines', name="Central order=4"))
+fig.update_layout(title="Primera derivada — h=0.1", xaxis_title="x", yaxis_title="f'(x)",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(df_scipy_c - df_c_exacta(x_values_c)), mode='lines', name="scipy.derivative"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(fwd2(x_values_c) - df_c_exacta(x_values_c)), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(bwd2(x_values_c) - df_c_exacta(x_values_c)), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(cen2(x_values_c) - df_c_exacta(x_values_c)), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(fwd4(x_values_c) - df_c_exacta(x_values_c)), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(bwd4(x_values_c) - df_c_exacta(x_values_c)), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(cen4(x_values_c) - df_c_exacta(x_values_c)), mode='lines', name="Central order=4"))
+fig.update_layout(title="Error absoluto primera derivada — h=0.1", xaxis_title="x", yaxis_title="Error absoluto",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+## h = 0.25
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+h = 0.25
+fwd2 = nd.Derivative(f_c, step=h, method='forward', order=2, n=1)
+bwd2 = nd.Derivative(f_c, step=h, method='backward', order=2, n=1)
+cen2 = nd.Derivative(f_c, step=h, method='central', order=2, n=1)
+fwd4 = nd.Derivative(f_c, step=h, method='forward', order=4, n=1)
+bwd4 = nd.Derivative(f_c, step=h, method='backward', order=4, n=1)
+cen4 = nd.Derivative(f_c, step=h, method='central', order=4, n=1)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_c, y=df_c_exacta(x_values_c), mode='lines', name="Exacta", line=dict(width=3)))
+fig.add_trace(go.Scatter(x=x_values_c, y=df_scipy_c, mode='lines', name="scipy.derivative"))
+fig.add_trace(go.Scatter(x=x_values_c, y=fwd2(x_values_c), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=bwd2(x_values_c), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=cen2(x_values_c), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=fwd4(x_values_c), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_c, y=bwd4(x_values_c), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_c, y=cen4(x_values_c), mode='lines', name="Central order=4"))
+fig.update_layout(title="Primera derivada — h=0.25", xaxis_title="x", yaxis_title="f'(x)",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(fwd2(x_values_c) - df_c_exacta(x_values_c)), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(bwd2(x_values_c) - df_c_exacta(x_values_c)), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(cen2(x_values_c) - df_c_exacta(x_values_c)), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(fwd4(x_values_c) - df_c_exacta(x_values_c)), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(bwd4(x_values_c) - df_c_exacta(x_values_c)), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(cen4(x_values_c) - df_c_exacta(x_values_c)), mode='lines', name="Central order=4"))
+fig.update_layout(title="Error absoluto primera derivada — h=0.25", xaxis_title="x", yaxis_title="Error absoluto",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+:::
+
+**Segunda derivada:**
+
+::: panel-tabset
+## h = 0.1
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+h = 0.1
+d2fwd2 = nd.Derivative(f_c, step=h, method='forward', order=2, n=2)
+d2bwd2 = nd.Derivative(f_c, step=h, method='backward', order=2, n=2)
+d2cen2 = nd.Derivative(f_c, step=h, method='central', order=2, n=2)
+d2fwd4 = nd.Derivative(f_c, step=h, method='forward', order=4, n=2)
+d2bwd4 = nd.Derivative(f_c, step=h, method='backward', order=4, n=2)
+d2cen4 = nd.Derivative(f_c, step=h, method='central', order=4, n=2)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_c, y=d2f_c_exacta(x_values_c), mode='lines', name="Exacta", line=dict(width=3)))
+fig.add_trace(go.Scatter(x=x_values_c, y=d2fwd2(x_values_c), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=d2bwd2(x_values_c), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=d2cen2(x_values_c), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=d2fwd4(x_values_c), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_c, y=d2bwd4(x_values_c), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_c, y=d2cen4(x_values_c), mode='lines', name="Central order=4"))
+fig.update_layout(title="Segunda derivada — h=0.1", xaxis_title="x", yaxis_title="f''(x)",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(d2fwd2(x_values_c) - d2f_c_exacta(x_values_c)), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(d2bwd2(x_values_c) - d2f_c_exacta(x_values_c)), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(d2cen2(x_values_c) - d2f_c_exacta(x_values_c)), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(d2fwd4(x_values_c) - d2f_c_exacta(x_values_c)), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(d2bwd4(x_values_c) - d2f_c_exacta(x_values_c)), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(d2cen4(x_values_c) - d2f_c_exacta(x_values_c)), mode='lines', name="Central order=4"))
+fig.update_layout(title="Error absoluto segunda derivada — h=0.1", xaxis_title="x", yaxis_title="Error absoluto",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+## h = 0.25
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+h = 0.25
+d2fwd2 = nd.Derivative(f_c, step=h, method='forward', order=2, n=2)
+d2bwd2 = nd.Derivative(f_c, step=h, method='backward', order=2, n=2)
+d2cen2 = nd.Derivative(f_c, step=h, method='central', order=2, n=2)
+d2fwd4 = nd.Derivative(f_c, step=h, method='forward', order=4, n=2)
+d2bwd4 = nd.Derivative(f_c, step=h, method='backward', order=4, n=2)
+d2cen4 = nd.Derivative(f_c, step=h, method='central', order=4, n=2)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_c, y=d2f_c_exacta(x_values_c), mode='lines', name="Exacta", line=dict(width=3)))
+fig.add_trace(go.Scatter(x=x_values_c, y=d2fwd2(x_values_c), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=d2bwd2(x_values_c), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=d2cen2(x_values_c), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=d2fwd4(x_values_c), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_c, y=d2bwd4(x_values_c), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_c, y=d2cen4(x_values_c), mode='lines', name="Central order=4"))
+fig.update_layout(title="Segunda derivada — h=0.25", xaxis_title="x", yaxis_title="f''(x)",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(d2fwd2(x_values_c) - d2f_c_exacta(x_values_c)), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(d2bwd2(x_values_c) - d2f_c_exacta(x_values_c)), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(d2cen2(x_values_c) - d2f_c_exacta(x_values_c)), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(d2fwd4(x_values_c) - d2f_c_exacta(x_values_c)), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(d2bwd4(x_values_c) - d2f_c_exacta(x_values_c)), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_c, y=np.abs(d2cen4(x_values_c) - d2f_c_exacta(x_values_c)), mode='lines', name="Central order=4"))
+fig.update_layout(title="Error absoluto segunda derivada — h=0.25", xaxis_title="x", yaxis_title="Error absoluto",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+:::
+
+d)  $f(x)=(\cos\,3x)^2-e^{2x}$, $x\in [0,\pi/2]$
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+f_d = lambda x: np.cos(3*x)**2 - np.exp(2*x)
+df_d_exacta = lambda x: -6*np.cos(3*x)*np.sin(3*x) - 2*np.exp(2*x)
+d2f_d_exacta = lambda x: 18*np.sin(3*x)**2 - 18*np.cos(3*x)**2 - 4*np.exp(2*x)
+
+x_values_d = np.linspace(0, np.pi/2, 200)
+
+plt.figure(figsize=(8, 5))
+plt.plot(x_values_d, f_d(x_values_d), label=r'$f(x) = \cos^2(3x) - e^{2x}$', linewidth=2)
+plt.xlabel("x")
+plt.ylabel("f(x)")
+plt.title(r"Función $f(x) = \cos^2(3x) - e^{2x}$")
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
+```
+
+**Primera derivada:**
+
+::: panel-tabset
+## h = 0.1
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+h = 0.1
+df_scipy_d = derivative(f_d, x_values_d).df
+fwd2 = nd.Derivative(f_d, step=h, method='forward', order=2, n=1)
+bwd2 = nd.Derivative(f_d, step=h, method='backward', order=2, n=1)
+cen2 = nd.Derivative(f_d, step=h, method='central', order=2, n=1)
+fwd4 = nd.Derivative(f_d, step=h, method='forward', order=4, n=1)
+bwd4 = nd.Derivative(f_d, step=h, method='backward', order=4, n=1)
+cen4 = nd.Derivative(f_d, step=h, method='central', order=4, n=1)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_d, y=df_d_exacta(x_values_d), mode='lines', name="Exacta", line=dict(width=3)))
+fig.add_trace(go.Scatter(x=x_values_d, y=df_scipy_d, mode='lines', name="scipy.derivative"))
+fig.add_trace(go.Scatter(x=x_values_d, y=fwd2(x_values_d), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=bwd2(x_values_d), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=cen2(x_values_d), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=fwd4(x_values_d), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_d, y=bwd4(x_values_d), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_d, y=cen4(x_values_d), mode='lines', name="Central order=4"))
+fig.update_layout(title="Primera derivada — h=0.1", xaxis_title="x", yaxis_title="f'(x)",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(df_scipy_d - df_d_exacta(x_values_d)), mode='lines', name="scipy.derivative"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(fwd2(x_values_d) - df_d_exacta(x_values_d)), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(bwd2(x_values_d) - df_d_exacta(x_values_d)), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(cen2(x_values_d) - df_d_exacta(x_values_d)), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(fwd4(x_values_d) - df_d_exacta(x_values_d)), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(bwd4(x_values_d) - df_d_exacta(x_values_d)), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(cen4(x_values_d) - df_d_exacta(x_values_d)), mode='lines', name="Central order=4"))
+fig.update_layout(title="Error absoluto primera derivada — h=0.1", xaxis_title="x", yaxis_title="Error absoluto",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+## h = 0.25
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+h = 0.25
+fwd2 = nd.Derivative(f_d, step=h, method='forward', order=2, n=1)
+bwd2 = nd.Derivative(f_d, step=h, method='backward', order=2, n=1)
+cen2 = nd.Derivative(f_d, step=h, method='central', order=2, n=1)
+fwd4 = nd.Derivative(f_d, step=h, method='forward', order=4, n=1)
+bwd4 = nd.Derivative(f_d, step=h, method='backward', order=4, n=1)
+cen4 = nd.Derivative(f_d, step=h, method='central', order=4, n=1)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_d, y=df_d_exacta(x_values_d), mode='lines', name="Exacta", line=dict(width=3)))
+fig.add_trace(go.Scatter(x=x_values_d, y=df_scipy_d, mode='lines', name="scipy.derivative"))
+fig.add_trace(go.Scatter(x=x_values_d, y=fwd2(x_values_d), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=bwd2(x_values_d), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=cen2(x_values_d), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=fwd4(x_values_d), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_d, y=bwd4(x_values_d), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_d, y=cen4(x_values_d), mode='lines', name="Central order=4"))
+fig.update_layout(title="Primera derivada — h=0.25", xaxis_title="x", yaxis_title="f'(x)",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(fwd2(x_values_d) - df_d_exacta(x_values_d)), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(bwd2(x_values_d) - df_d_exacta(x_values_d)), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(cen2(x_values_d) - df_d_exacta(x_values_d)), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(fwd4(x_values_d) - df_d_exacta(x_values_d)), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(bwd4(x_values_d) - df_d_exacta(x_values_d)), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(cen4(x_values_d) - df_d_exacta(x_values_d)), mode='lines', name="Central order=4"))
+fig.update_layout(title="Error absoluto primera derivada — h=0.25", xaxis_title="x", yaxis_title="Error absoluto",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+:::
+
+**Segunda derivada:**
+
+::: panel-tabset
+## h = 0.1
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+h = 0.1
+d2fwd2 = nd.Derivative(f_d, step=h, method='forward', order=2, n=2)
+d2bwd2 = nd.Derivative(f_d, step=h, method='backward', order=2, n=2)
+d2cen2 = nd.Derivative(f_d, step=h, method='central', order=2, n=2)
+d2fwd4 = nd.Derivative(f_d, step=h, method='forward', order=4, n=2)
+d2bwd4 = nd.Derivative(f_d, step=h, method='backward', order=4, n=2)
+d2cen4 = nd.Derivative(f_d, step=h, method='central', order=4, n=2)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_d, y=d2f_d_exacta(x_values_d), mode='lines', name="Exacta", line=dict(width=3)))
+fig.add_trace(go.Scatter(x=x_values_d, y=d2fwd2(x_values_d), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=d2bwd2(x_values_d), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=d2cen2(x_values_d), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=d2fwd4(x_values_d), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_d, y=d2bwd4(x_values_d), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_d, y=d2cen4(x_values_d), mode='lines', name="Central order=4"))
+fig.update_layout(title="Segunda derivada — h=0.1", xaxis_title="x", yaxis_title="f''(x)",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(d2fwd2(x_values_d) - d2f_d_exacta(x_values_d)), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(d2bwd2(x_values_d) - d2f_d_exacta(x_values_d)), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(d2cen2(x_values_d) - d2f_d_exacta(x_values_d)), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(d2fwd4(x_values_d) - d2f_d_exacta(x_values_d)), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(d2bwd4(x_values_d) - d2f_d_exacta(x_values_d)), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(d2cen4(x_values_d) - d2f_d_exacta(x_values_d)), mode='lines', name="Central order=4"))
+fig.update_layout(title="Error absoluto segunda derivada — h=0.1", xaxis_title="x", yaxis_title="Error absoluto",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+## h = 0.25
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+h = 0.25
+d2fwd2 = nd.Derivative(f_d, step=h, method='forward', order=2, n=2)
+d2bwd2 = nd.Derivative(f_d, step=h, method='backward', order=2, n=2)
+d2cen2 = nd.Derivative(f_d, step=h, method='central', order=2, n=2)
+d2fwd4 = nd.Derivative(f_d, step=h, method='forward', order=4, n=2)
+d2bwd4 = nd.Derivative(f_d, step=h, method='backward', order=4, n=2)
+d2cen4 = nd.Derivative(f_d, step=h, method='central', order=4, n=2)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_d, y=d2f_d_exacta(x_values_d), mode='lines', name="Exacta", line=dict(width=3)))
+fig.add_trace(go.Scatter(x=x_values_d, y=d2fwd2(x_values_d), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=d2bwd2(x_values_d), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=d2cen2(x_values_d), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=d2fwd4(x_values_d), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_d, y=d2bwd4(x_values_d), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_d, y=d2cen4(x_values_d), mode='lines', name="Central order=4"))
+fig.update_layout(title="Segunda derivada — h=0.25", xaxis_title="x", yaxis_title="f''(x)",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(d2fwd2(x_values_d) - d2f_d_exacta(x_values_d)), mode='lines', name="Forward order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(d2bwd2(x_values_d) - d2f_d_exacta(x_values_d)), mode='lines', name="Backward order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(d2cen2(x_values_d) - d2f_d_exacta(x_values_d)), mode='lines', name="Central order=2"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(d2fwd4(x_values_d) - d2f_d_exacta(x_values_d)), mode='lines', name="Forward order=4"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(d2bwd4(x_values_d) - d2f_d_exacta(x_values_d)), mode='lines', name="Backward order=4"))
+fig.add_trace(go.Scatter(x=x_values_d, y=np.abs(d2cen4(x_values_d) - d2f_d_exacta(x_values_d)), mode='lines', name="Central order=4"))
+fig.update_layout(title="Error absoluto segunda derivada — h=0.25", xaxis_title="x", yaxis_title="Error absoluto",
+                  template='plotly_white', width=800, height=500)
+fig.show()
+```
+:::
+
+# Ejercicio 2
+
+Elige 3 indicadores económicos del INEGI (del archivo `TIE_Inegi_long.xlsx`), realiza la gráfica de la serie temporal y de su derivada. Brinda un análisis de la gráfica y de la evolución del indicador a lo largo del tiempo.
+
+Los indicadores seleccionados son: **Tipo de cambio nominal**, **Exportaciones totales** y **Tasa de desocupación urbana**.
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+df_inegi = pd.read_excel("TIE_Inegi_long.xlsx", parse_dates=["Fecha"])
+df_inegi = df_inegi.sort_values("Fecha").reset_index(drop=True)
+
+indicadores = ["Tipo_cambio_nominal", "Exportaciones_totales", "Tasa_desocupacion_urbana"]
+titulos = ["Tipo de cambio nominal (MXN/USD)", 
+           "Exportaciones totales (millones de dólares)",
+           "Tasa de desocupación urbana (%)"]
+
+for ind, titulo in zip(indicadores, titulos):
+    serie = df_inegi[ind].dropna()
+    fechas = df_inegi.loc[serie.index, "Fecha"]
+    x_num = np.arange(len(serie))  # índice numérico para derivada
+    
+    # Derivada numérica con np.gradient (series de tiempo discretas)
+    derivada = np.gradient(serie.values, x_num)
+    
+    fig, axes = plt.subplots(2, 1, figsize=(10, 8))
+    
+    axes[0].plot(fechas, serie.values, color='steelblue', linewidth=1.5)
+    axes[0].set_title(f"Serie temporal: {titulo}")
+    axes[0].set_xlabel("Fecha")
+    axes[0].set_ylabel("Valor")
+    axes[0].grid(alpha=0.3)
+    
+    axes[1].plot(fechas, derivada, color='firebrick', linewidth=1.2)
+    axes[1].axhline(0, color='black', lw=1, ls='--')
+    axes[1].set_title(f"Derivada numérica: {titulo}")
+    axes[1].set_xlabel("Fecha")
+    axes[1].set_ylabel("Tasa de cambio")
+    axes[1].grid(alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
+```
+
+**Análisis de los indicadores:**
+
+-   **Tipo de cambio nominal:** A lo largo del período se observa una tendencia de depreciación del peso mexicano frente al dólar. La derivada muestra episodios de alta volatilidad, especialmente alrededor de crisis económicas (1994-1995, 2008-2009 y 2020). Los períodos donde la derivada es positiva indican depreciación acelerada; donde es negativa, apreciación.
+
+-   **Exportaciones totales:** Presentan una tendencia creciente en el largo plazo, con caídas marcadas durante la crisis financiera de 2008-2009 y la pandemia de 2020. La derivada permite identificar claramente esos puntos de quiebre donde el crecimiento se detuvo o revirtió abruptamente.
+
+-   **Tasa de desocupación urbana:** Muestra ciclos relacionados con el desempeño económico general. Los picos de la derivada corresponden a momentos de pérdida rápida de empleos (crisis), mientras que valores negativos indican recuperación del mercado laboral.
+
+# Ejercicio 3
+
+Calcular el valor exacto y las aproximaciones numéricas de la siguiente integral:
+
+$$\int_0^4 x^2e^{-x} dx$$
+
+**Valor exacto** (integración por partes repetida):
+
+$$\int_0^4 x^2 e^{-x}dx = \left[-e^{-x}(x^2 + 2x + 2)\right]_0^4 = 2 - 26e^{-4}$$
+
+```{python}
+#| code-fold: true
+
+a = 0
+b = 4
+f3 = lambda x: x**2 * np.exp(-x)
+
+integral_exacta_3 = 2 - 26*np.exp(-4)
+print(f"Valor exacto de la integral: {integral_exacta_3:.8f}")
+
+x_plot = np.linspace(-0.2, 4.3, 200)
+plt.figure(figsize=(8, 5))
+plt.plot(x_plot, f3(x_plot), label=r'$f(x) = x^2 e^{-x}$')
+plt.fill_between(np.linspace(a, b, 200), f3(np.linspace(a, b, 200)), alpha=0.3, color='orange', label='Área bajo la curva')
+plt.title(r'Gráfica de $f(x) = x^2 e^{-x}$')
+plt.xlabel('x')
+plt.ylabel('f(x)')
+plt.axhline(0, color='black', lw=1, ls='--')
+plt.legend()
+plt.grid()
+plt.show()
+```
+
+**Funciones de integración numérica:**
+
+```{python}
+#| code-fold: true
+
+def trapezoidal(f, a, b):
+    return (b - a) * (f(a) + f(b)) / 2
+
+def simpson(f, a, b):
+    h = (b - a) / 2
+    x1 = a + h
+    return (h / 3) * (f(a) + 4*f(x1) + f(b))
+
+def simpson_38(f, a, b):
+    h = (b - a) / 3
+    return (3*h/8) * (f(a) + 3*f(a+h) + 3*f(a+2*h) + f(b))
+
+def boole(f, a, b):
+    h = (b - a) / 4
+    return (2*h/45) * (7*f(a) + 32*f(a+h) + 12*f(a+2*h) + 32*f(a+3*h) + 7*f(b))
+```
+
+**Comparación de métodos simples:**
+
+```{python}
+#| code-fold: true
+
+metodos = {
+    "Trapezoidal": trapezoidal(f3, a, b),
+    "Simpson": simpson(f3, a, b),
+    "Simpson 3/8": simpson_38(f3, a, b),
+    "Boole": boole(f3, a, b),
+}
+
+for nombre, val in metodos.items():
+    print(f"{nombre}: {val:.8f}  |  Error absoluto: {abs(integral_exacta_3 - val):.2e}")
+```
+
+**Métodos compuestos (n=12 subintervalos):**
+
+```{python}
+#| code-fold: true
+
+n = 12
+h = (b - a) / n
+
+# Trapezoidal compuesto
+a_vals = np.linspace(a, b, endpoint=False, num=n)
+b_vals = a_vals + h
+trap_comp = sum(trapezoidal(f3, ai, bi) for ai, bi in zip(a_vals, b_vals))
+
+# Simpson compuesto
+a_vals2 = np.linspace(a, b, endpoint=False, num=n//2)
+b_vals2 = a_vals2 + 2*h
+simp_comp = sum(simpson(f3, ai, bi) for ai, bi in zip(a_vals2, b_vals2))
+
+# Simpson 3/8 compuesto
+a_vals3 = np.linspace(a, b, endpoint=False, num=n//3)
+b_vals3 = a_vals3 + 3*h
+s38_comp = sum(simpson_38(f3, ai, bi) for ai, bi in zip(a_vals3, b_vals3))
+
+# Boole compuesto
+a_vals4 = np.linspace(a, b, endpoint=False, num=n//4)
+b_vals4 = a_vals4 + 4*h
+boole_comp = sum(boole(f3, ai, bi) for ai, bi in zip(a_vals4, b_vals4))
+
+# integrate.quad
+quad_val, quad_err = integrate.quad(f3, a, b)
+
+resultados = {
+    "Trapezoidal compuesto": trap_comp,
+    "Simpson compuesto": simp_comp,
+    "Simpson 3/8 compuesto": s38_comp,
+    "Boole compuesto": boole_comp,
+    "integrate.quad (scipy)": quad_val,
+}
+
+for nombre, val in resultados.items():
+    print(f"{nombre}: {val:.8f}  |  Error absoluto: {abs(integral_exacta_3 - val):.2e}")
+```
+
+# Ejercicio 4
+
+Aproximar las siguientes integrales con la función `integrate.quad` (de SciPy) y con el método de Montecarlo, en cada caso hacer una gráfica de la función e indicar el área bajo la curva.
+
+a)  $$\int_0^1 e^{-x^2}\,dx$$
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+a=0
+b=1
+f = lambda x: np.exp(- x**2)
+x_values = np.linspace(-0.1, 1.1, 100)
+
+plt.figure(figsize=(8, 5))
+plt.plot(x_values, f(x_values), label=r'$f(x)$')
+plt.fill_between(np.linspace(a,b,100), f(np.linspace(a,b,100)), alpha=0.3, color = '#333AAA')
+plt.xlabel(r'$x$')
+plt.ylabel(r'$f(x)$')
+plt.legend()
+plt.grid(True)
+plt.axis('equal')
+plt.show()
+
+```
+
+**Aproximación de la integral**
+
+```{python}
+aprox_integral, error_integral = integrate.quad(f, a, b)
+print(f"La aproxiamción de la integral es: {aprox_integral}")
+print(f"El error estimado es: {error_integral}")
+```
+
+**Método de Montecarlo para aproximar la integral**
+
+```{python}
+#| code-fold: true 
+#| fig-align: "center" 
+
+N = 100000
+
+ymin = 0
+ymax = 1
+
+x_random = np.random.uniform(a, b, N)
+y_random = np.random.uniform(ymin, ymax, N)
+
+puntos_in = y_random <= f(x_random)
+
+
+plt.figure(figsize=(8, 5))
+plt.scatter(x_random[puntos_in], y_random[puntos_in], color='green', s=10, label='In')
+plt.scatter(x_random[~puntos_in], y_random[~puntos_in], color='red', s=10, label='Out')
+plt.plot(x_values, f(x_values), color='blue', label=r'$f(x)$')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title('Método de Montecarlo para aproximar la integral')
+plt.legend()
+plt.grid()
+plt.axis('equal')
+plt.show()
+```
+
+```{python}
+#| code-fold: true
+integral_montecarlo = (ymax - ymin) * (b - a) * np.sum(puntos_in) / N
+print(f"Aproximación de la integral con el método de Montecarlo:")
+print(integral_montecarlo)
+```
+
+b)  $$\int_0^\pi \text{sen}(x^2)\,dx$$
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+a=0
+b=np.pi
+f = lambda x: np.sin(x**2)
+x_values = np.linspace(-0.1, 3.3, 100)
+
+plt.figure(figsize=(8, 5))
+plt.plot(x_values, f(x_values), label=r'$f(x)$')
+plt.fill_between(np.linspace(a,b,100), f(np.linspace(a,b,100)), alpha=0.3, color = '#333AAA')
+plt.xlabel(r'$x$')
+plt.ylabel(r'$f(x)$')
+plt.legend()
+plt.grid(True)
+plt.axis('equal')
+plt.show()
+```
+
+**Aproximación de la integral**
+
+```{python}
+aprox_integral, error_integral = integrate.quad(f, a, b)
+print(f"La aproxiamción de la integral es: {aprox_integral}")
+print(f"El error estimado es: {error_integral}")
+```
+
+**Método de Montecarlo**
+
+```{python}
+#| code-fold: true 
+#| fig-align: "center" 
+
+N = 100000
+
+ymin = -1
+ymax = 1
+
+x_random = np.random.uniform(a, b, N)
+y_random = np.random.uniform(ymin, ymax, N)
+
+puntos_in = np.abs(y_random) <= np.abs(f(x_random))
+puntos_in = puntos_in * np.sign(y_random) == np.sign(f(x_random))
+puntos_in_positivo = puntos_in * (1 == np.sign(f(x_random)))
+puntos_in_negativo = puntos_in * (-1 == np.sign(f(x_random)))
+
+
+plt.figure(figsize=(8, 5))
+plt.scatter(x_random[puntos_in_positivo], y_random[puntos_in_positivo], color='green', s=10, label='In Postivo')
+plt.scatter(x_random[puntos_in_negativo], y_random[puntos_in_negativo], color='goldenrod', s=10, label='In Negativo')
+plt.scatter(x_random[~puntos_in], y_random[~puntos_in], color='red', s=10, label='Out')
+plt.plot(x_values, f(x_values), color='blue', label=r'$f(x)$')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title('Método de Montecarlo para aproximar la integral')
+plt.legend()
+plt.grid()
+plt.axis('equal')
+plt.show()
+```
+
+```{python}
+#| code-fold: true
+integral_montecarlo_positivo = (ymax - ymin) * (b - a) * np.sum(puntos_in_positivo) / N
+integral_montecarlo_negativo = (ymax - ymin) * (b - a) * np.sum(puntos_in_negativo) / N
+integral_montecarlo = integral_montecarlo_positivo - integral_montecarlo_negativo
+print(f"Aproximación de la integral con el método de Montecarlo:")
+print(integral_montecarlo)
+```
+
+c)  $$\int_\pi^{3\pi} \frac{\text{sen}(x)}{x}\,dx$$
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+a = np.pi
+b = 3*np.pi
+f = lambda x: np.sin(x) / x
+x_values = np.linspace(np.pi - 0.2, 3*np.pi + 0.2, 300)
+
+plt.figure(figsize=(8, 5))
+plt.plot(x_values, f(x_values), label=r'$f(x) = \frac{\sin(x)}{x}$')
+plt.fill_between(np.linspace(a, b, 300), f(np.linspace(a, b, 300)), alpha=0.3, color='#333AAA')
+plt.xlabel(r'$x$')
+plt.ylabel(r'$f(x)$')
+plt.title(r'$f(x) = \frac{\sin(x)}{x}$, $x \in [\pi, 3\pi]$')
+plt.axhline(0, color='black', lw=1, ls='--')
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+**Aproximación con integrate.quad:**
+
+```{python}
+#| code-fold: true
+aprox_integral, error_integral = integrate.quad(f, a, b)
+print(f"Aproximación de la integral: {aprox_integral:.8f}")
+print(f"Error estimado: {error_integral:.2e}")
+```
+
+**Método de Montecarlo:**
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+N = 100000
+ymin = -0.35
+ymax = 0.35
+
+x_random = np.random.uniform(a, b, N)
+y_random = np.random.uniform(ymin, ymax, N)
+
+puntos_in = np.abs(y_random) <= np.abs(f(x_random))
+puntos_in = puntos_in * (np.sign(y_random) == np.sign(f(x_random)))
+puntos_in_pos = (puntos_in) & (np.sign(f(x_random)) == 1)
+puntos_in_neg = (puntos_in) & (np.sign(f(x_random)) == -1)
+
+plt.figure(figsize=(8, 5))
+plt.scatter(x_random[puntos_in_pos], y_random[puntos_in_pos], color='green', s=5, label='In Positivo')
+plt.scatter(x_random[puntos_in_neg], y_random[puntos_in_neg], color='goldenrod', s=5, label='In Negativo')
+plt.scatter(x_random[~puntos_in], y_random[~puntos_in], color='red', s=5, label='Out')
+plt.plot(np.linspace(a, b, 300), f(np.linspace(a, b, 300)), color='blue', label=r'$f(x)$')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title('Montecarlo — sin(x)/x')
+plt.legend()
+plt.grid()
+plt.show()
+
+mc_pos = (ymax - ymin) * (b - a) * np.sum(puntos_in_pos) / N
+mc_neg = (ymax - ymin) * (b - a) * np.sum(puntos_in_neg) / N
+print(f"Aproximación Montecarlo: {mc_pos - mc_neg:.8f}")
+```
+
+d)  $$\int_0^\infty e^{-x^2} \cos(x)\,dx$$
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+f = lambda x: np.exp(-x**2) * np.cos(x)
+x_plot = np.linspace(-0.2, 5, 300)
+
+plt.figure(figsize=(8, 5))
+plt.plot(x_plot, f(x_plot), label=r'$f(x) = e^{-x^2}\cos(x)$')
+plt.fill_between(np.linspace(0, 5, 300), f(np.linspace(0, 5, 300)), alpha=0.3, color='#333AAA')
+plt.xlabel(r'$x$')
+plt.ylabel(r'$f(x)$')
+plt.title(r'$f(x) = e^{-x^2}\cos(x)$, $x \in [0, \infty)$')
+plt.axhline(0, color='black', lw=1, ls='--')
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+```{python}
+#| code-fold: true
+aprox_integral, error_integral = integrate.quad(f, 0, np.inf)
+print(f"Aproximación de la integral: {aprox_integral:.8f}")
+print(f"Error estimado: {error_integral:.2e}")
+```
+
+**Método de Montecarlo** (acotando en $[0, 10]$ ya que $e^{-x^2}$ tiende a 0 rápidamente):
+
+```{python}
+#| code-fold: true
+
+N = 500000
+a_mc, b_mc = 0, 10
+ymin, ymax = -1, 1
+
+x_r = np.random.uniform(a_mc, b_mc, N)
+y_r = np.random.uniform(ymin, ymax, N)
+
+puntos_in = np.abs(y_r) <= np.abs(f(x_r))
+puntos_in = puntos_in & (np.sign(y_r) == np.sign(f(x_r)))
+puntos_pos = puntos_in & (np.sign(f(x_r)) == 1)
+puntos_neg = puntos_in & (np.sign(f(x_r)) == -1)
+
+mc = (ymax - ymin) * (b_mc - a_mc) * (np.sum(puntos_pos) - np.sum(puntos_neg)) / N
+print(f"Aproximación Montecarlo: {mc:.8f}")
+```
+
+e)  $$\int_0^1 x^x\,dx$$
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+f = lambda x: x**x
+x_plot = np.linspace(0.001, 1, 200)
+
+plt.figure(figsize=(8, 5))
+plt.plot(x_plot, f(x_plot), label=r'$f(x) = x^x$')
+plt.fill_between(x_plot, f(x_plot), alpha=0.3, color='#333AAA')
+plt.xlabel(r'$x$')
+plt.ylabel(r'$f(x)$')
+plt.title(r'$f(x) = x^x$, $x \in [0, 1]$')
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+```{python}
+#| code-fold: true
+aprox_integral, error_integral = integrate.quad(f, 0.0001, 1)
+print(f"Aproximación de la integral: {aprox_integral:.8f}")
+print(f"Error estimado: {error_integral:.2e}")
+```
+
+**Método de Montecarlo:**
+
+```{python}
+#| code-fold: true
+N = 100000
+a_mc, b_mc = 0.0001, 1
+ymin, ymax = 0, 1
+
+x_r = np.random.uniform(a_mc, b_mc, N)
+y_r = np.random.uniform(ymin, ymax, N)
+puntos_in = y_r <= f(x_r)
+
+mc = (ymax - ymin) * (b_mc - a_mc) * np.sum(puntos_in) / N
+print(f"Aproximación Montecarlo: {mc:.8f}")
+```
+
+f)  $$\int_1^5 e^{-x^2} x^3\,dx$$
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+a, b = 1, 5
+f = lambda x: np.exp(-x**2) * x**3
+x_plot = np.linspace(0.8, 5.2, 200)
+
+plt.figure(figsize=(8, 5))
+plt.plot(x_plot, f(x_plot), label=r'$f(x) = e^{-x^2} x^3$')
+plt.fill_between(np.linspace(a, b, 200), f(np.linspace(a, b, 200)), alpha=0.3, color='#333AAA')
+plt.xlabel(r'$x$')
+plt.ylabel(r'$f(x)$')
+plt.title(r'$f(x) = e^{-x^2} x^3$, $x \in [1, 5]$')
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+```{python}
+#| code-fold: true
+aprox_integral, error_integral = integrate.quad(f, a, b)
+print(f"Aproximación de la integral: {aprox_integral:.8f}")
+print(f"Error estimado: {error_integral:.2e}")
+```
+
+**Método de Montecarlo:**
+
+```{python}
+#| code-fold: true
+N = 100000
+ymin, ymax = 0, f(1.5)  # máximo aproximado
+
+x_r = np.random.uniform(a, b, N)
+y_r = np.random.uniform(ymin, ymax, N)
+puntos_in = y_r <= f(x_r)
+
+mc = (ymax - ymin) * (b - a) * np.sum(puntos_in) / N
+print(f"Aproximación Montecarlo: {mc:.8f}")
+```
+
+g)  $$\int_0^\infty \frac{x}{e^x-1}\,dx$$
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+f = lambda x: x / (np.exp(x) - 1)
+x_plot = np.linspace(0.01, 8, 300)
+
+plt.figure(figsize=(8, 5))
+plt.plot(x_plot, f(x_plot), label=r'$f(x) = \frac{x}{e^x - 1}$')
+plt.fill_between(x_plot, f(x_plot), alpha=0.3, color='#333AAA')
+plt.xlabel(r'$x$')
+plt.ylabel(r'$f(x)$')
+plt.title(r'$f(x) = \frac{x}{e^x - 1}$, $x \in [0, \infty)$')
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+```{python}
+#| code-fold: true
+# Nota: el límite exacto es pi^2/6 ≈ 1.6449
+aprox_integral, error_integral = integrate.quad(f, 0.0001, np.inf)
+print(f"Aproximación de la integral: {aprox_integral:.8f}")
+print(f"Valor exacto π²/6 = {np.pi**2/6:.8f}")
+print(f"Error estimado: {error_integral:.2e}")
+```
+
+**Método de Montecarlo** (acotando en $[0.001, 20]$):
+
+```{python}
+#| code-fold: true
+N = 500000
+a_mc, b_mc = 0.001, 20
+ymin, ymax = 0, 1
+
+x_r = np.random.uniform(a_mc, b_mc, N)
+y_r = np.random.uniform(ymin, ymax, N)
+puntos_in = y_r <= f(x_r)
+
+mc = (ymax - ymin) * (b_mc - a_mc) * np.sum(puntos_in) / N
+print(f"Aproximación Montecarlo: {mc:.8f}")
+```
+
+h)  $$\int_0^1 \frac{1}{\sqrt{x^4+1}}\,dx$$
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+a, b = 0, 1
+f = lambda x: 1 / np.sqrt(x**4 + 1)
+x_plot = np.linspace(-0.1, 1.1, 200)
+
+plt.figure(figsize=(8, 5))
+plt.plot(x_plot, f(x_plot), label=r'$f(x) = \frac{1}{\sqrt{x^4+1}}$')
+plt.fill_between(np.linspace(a, b, 200), f(np.linspace(a, b, 200)), alpha=0.3, color='#333AAA')
+plt.xlabel(r'$x$')
+plt.ylabel(r'$f(x)$')
+plt.title(r'$f(x) = \frac{1}{\sqrt{x^4+1}}$, $x \in [0, 1]$')
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+```{python}
+#| code-fold: true
+aprox_integral, error_integral = integrate.quad(f, a, b)
+print(f"Aproximación de la integral: {aprox_integral:.8f}")
+print(f"Error estimado: {error_integral:.2e}")
+```
+
+**Método de Montecarlo:**
+
+```{python}
+#| code-fold: true
+N = 100000
+ymin, ymax = 0, 1
+
+x_r = np.random.uniform(a, b, N)
+y_r = np.random.uniform(ymin, ymax, N)
+puntos_in = y_r <= f(x_r)
+
+mc = (ymax - ymin) * (b - a) * np.sum(puntos_in) / N
+print(f"Aproximación Montecarlo: {mc:.8f}")
+```
+
+# Ejercicio 5
+
+Aproximar las siguientes integrales dobles y triples, llevar a cabo la gráfica cuando se indique y comparar con el valor *exacto* de la integral.
+
+a)  Realizar gráfica
+
+$$\int_{-1}^{1}\int_1^2 (3y^2-x^2+5)\, dx\, dy$$
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+x = np.linspace(1, 2, 50)
+y = np.linspace(-1, 1, 50)
+X, Y = np.meshgrid(x, y)
+Z = 3*Y**2 - X**2 + 5
+
+surface = go.Surface(x=X, y=Y, z=Z, colorscale='viridis', opacity=0.85)
+base = go.Surface(x=X, y=Y, z=np.zeros_like(Z), colorscale='Blues', showscale=False, opacity=0.3)
+
+fig = go.Figure(data=[surface, base])
+fig.update_layout(title="f(x,y) = 3y² - x² + 5", scene=dict(
+    xaxis_title="x", yaxis_title="y", zaxis_title="z"),
+    width=800, height=500)
+fig.show()
+```
+
+```{python}
+#| code-fold: true
+
+# Valor exacto: integral en x de 1 a 2, luego en y de -1 a 1
+# ∫_{-1}^{1} ∫_1^2 (3y² - x² + 5) dx dy
+# ∫ en x: [3y²x - x³/3 + 5x]_1^2 = (6y² - 8/3 + 10) - (3y² - 1/3 + 5) = 3y² + 2
+# ∫_{-1}^{1} (3y² + 2) dy = [y³ + 2y]_{-1}^{1} = (1+2) - (-1-2) = 6
+integral_exacta_5a = 6
+print(f"Valor exacto: {integral_exacta_5a}")
+
+f5a = lambda y, x: 3*y**2 - x**2 + 5
+val, err = integrate.dblquad(f5a, 1, 2, -1, 1)
+print(f"Aproximación dblquad: {val:.8f}")
+print(f"Error absoluto: {abs(integral_exacta_5a - val):.2e}")
+```
+
+b)  $$\int_{0}^{6}\int_1^5 \sqrt{x+4y}\, dx\, dy$$
+
+```{python}
+#| code-fold: true
+
+f5b = lambda y, x: np.sqrt(x + 4*y)
+val, err = integrate.dblquad(f5b, 1, 5, 0, 6)
+print(f"Aproximación dblquad: {val:.8f}")
+print(f"Error estimado: {err:.2e}")
+```
+
+c)  $$\int_{1}^{e}\int_0^{\log(x)} x^3\, dy\, dx$$
+
+```{python}
+#| code-fold: true
+
+# Nota: dy dx, entonces primer argumento es y, el externo es x
+# límites de y: 0 a log(x), límites de x: 1 a e
+f5c = lambda y, x: x**3
+val, err = integrate.dblquad(f5c, 1, np.e, 0, lambda x: np.log(x))
+# Valor exacto: ∫_1^e x³ ln(x) dx = [x⁴/4 * ln(x)]_1^e - ∫_1^e x³/4 dx
+# = e⁴/4 - [x⁴/16]_1^e = e⁴/4 - e⁴/16 + 1/16 = 3e⁴/16 + 1/16
+exacta_5c = 3*np.e**4/16 + 1/16
+print(f"Valor exacto: {exacta_5c:.8f}")
+print(f"Aproximación dblquad: {val:.8f}")
+print(f"Error absoluto: {abs(exacta_5c - val):.2e}")
+```
+
+d)  $$\iint_D 30ye^x\, dx\, dy$$
+
+Donde $D\subset \mathbb{R}^2$ es la región de la gráfica (entre $y=x/4$ y $y=x$, con $x \in [0,4]$).
+
+```{python}
+#| code-fold: true
+#| fig-align: 'center'
+
+x_val = np.array([0,4])
+y_val1 = np.array([0, 1])
+y_val2 = np.array([0, 4])
+
+plt.figure(figsize=(8,6))
+plt.plot(x_val, y_val1)
+plt.plot(x_val, y_val2)
+plt.fill_between(x_val, y1=y_val1, y2=y_val2, color="firebrick", alpha=0.5)
+plt.grid()
+plt.show()
+```
+
+```{python}
+#| code-fold: true
+
+# Región: x de 0 a 4, y de x/4 a x
+f5d = lambda y, x: 30 * y * np.exp(x)
+val, err = integrate.dblquad(f5d, 0, 4, lambda x: x/4, lambda x: x)
+print(f"Aproximación dblquad: {val:.8f}")
+print(f"Error estimado: {err:.2e}")
+```
+
+e)  $$\iiint_B z\, e^{x+y}\, dx\, dy\, dz, \quad B=[0,1]\times[0,1]\times[0,1]$$
+
+```{python}
+#| code-fold: true
+
+# tplquad: f(z, y, x), el orden externo es x, luego y, luego z
+f5e = lambda z, y, x: z * np.exp(x + y)
+val, err = integrate.tplquad(f5e, 0, 1, 0, 1, 0, 1)
+# Valor exacto: (∫_0^1 z dz)(∫_0^1 e^x dx)(∫_0^1 e^y dy) = (1/2)(e-1)^2
+exacta_5e = 0.5 * (np.e - 1)**2
+print(f"Valor exacto: {exacta_5e:.8f}")
+print(f"Aproximación tplquad: {val:.8f}")
+print(f"Error absoluto: {abs(exacta_5e - val):.2e}")
+```
+
+f)  $$\int_0^1\int_0^x\int_0^y (y+xz)\, dz\, dy\, dx$$
+
+```{python}
+#| code-fold: true
+
+# tplquad: f(z, y, x), externo x, luego y de 0 a x, luego z de 0 a y
+f5f = lambda z, y, x: y + x*z
+val, err = integrate.tplquad(f5f, 0, 1, 0, lambda x: x, 0, lambda x, y: y)
+# Valor exacto: 3/28
+exacta_5f = 3/28
+print(f"Valor exacto: {exacta_5f:.8f}")
+print(f"Aproximación tplquad: {val:.8f}")
+print(f"Error absoluto: {abs(exacta_5f - val):.2e}")
+```
+
+# Ejercicio 6
+
+De `scipy.stats` elige 5 distribuciones continuas diferentes de probabilidad continua, realiza la gráfica y encuentra la probabilidad que la variable aleatoria tome un valor en un intervalo dado. Compara el resultado con el método `cdf`.
+
+```{python}
+#| code-fold: true
+#| fig-align: "center"
+
+from scipy import stats
+
+distribuciones = [
+    {
+        "nombre": "Normal — N(0,1)",
+        "dist": stats.norm(loc=0, scale=1),
+        "x_range": (-4, 4),
+        "a": -1, "b": 1
+    },
+    {
+        "nombre": "Exponencial — Exp(λ=1)",
+        "dist": stats.expon(scale=1),
+        "x_range": (0, 6),
+        "a": 0, "b": 2
+    },
+    {
+        "nombre": "Gamma — Γ(α=3, β=1)",
+        "dist": stats.gamma(a=3, scale=1),
+        "x_range": (0, 10),
+        "a": 1, "b": 5
+    },
+    {
+        "nombre": "Beta — Beta(α=2, β=5)",
+        "dist": stats.beta(a=2, b=5),
+        "x_range": (0, 1),
+        "a": 0.2, "b": 0.7
+    },
+    {
+        "nombre": "Chi-cuadrada — χ²(k=4)",
+        "dist": stats.chi2(df=4),
+        "x_range": (0, 14),
+        "a": 1, "b": 6
+    }
+]
+
+for d in distribuciones:
+    dist = d["dist"]
+    a_i, b_i = d["a"], d["b"]
+    x_range = d["x_range"]
+    x_vals = np.linspace(*x_range, 300)
+    
+    # Probabilidad por integración numérica
+    prob_quad, _ = integrate.quad(dist.pdf, a_i, b_i)
+    # Probabilidad por CDF
+    prob_cdf = dist.cdf(b_i) - dist.cdf(a_i)
+    
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.plot(x_vals, dist.pdf(x_vals), color='steelblue', linewidth=2, label='PDF')
+    ax.fill_between(np.linspace(a_i, b_i, 200), dist.pdf(np.linspace(a_i, b_i, 200)),
+                    alpha=0.4, color='steelblue',
+                    label=f'P({a_i} ≤ X ≤ {b_i}) = {prob_quad:.4f}')
+    ax.set_title(d["nombre"])
+    ax.set_xlabel("x")
+    ax.set_ylabel("f(x)")
+    ax.legend()
+    ax.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+    
+    print(f"{d['nombre']}")
+    print(f"  P({a_i} ≤ X ≤ {b_i}) vía integrate.quad : {prob_quad:.6f}")
+    print(f"  P({a_i} ≤ X ≤ {b_i}) vía CDF            : {prob_cdf:.6f}")
+    print(f"  Diferencia                               : {abs(prob_quad - prob_cdf):.2e}\n")
+```
